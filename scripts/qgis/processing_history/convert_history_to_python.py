@@ -3,18 +3,37 @@ import re
 import sys
 
 if len(sys.argv) < 2:
-    print("No data dir specified - exiting")
+    print("No input data dir specified - exiting")
     sys.exit(1)
 
 data_dir = sys.argv[1]
 
-# FIXME: make this work on other platforms
-qgis_user_profile_dir=os.path.join('/Users', os.environ.get('USER'), 'Library/Application Support/QGIS/QGIS3/profiles/default')
+if len(sys.argv) > 2:
+    qgis_user_profile_dir = os.path.realpath(sys.argv[2])
+else:
+    if sys.platform.startswith('win32'):
+        qgis_user_profile_dir = os.path.join(
+            os.environ.get('APPDATA'),
+            'QGIS/QGIS3/profiles/default'
+        )
+        if not os.path.isdir(qgis_user_profile_dir):
+            qgis_user_profile_dir = os.path.join(
+                os.environ.get('LOCALAPPDATA'),
+                'QGIS/QGIS3/profiles/default'
+            )
+    elif sys.platform.startswith('darwin'):
+        qgis_user_profile_dir = os.path.join(
+            '/Users', os.environ.get('USER'),
+            'Library/Application Support/QGIS/QGIS3/profiles/default'
+        )
 
-processing_log=os.path.join(qgis_user_profile_dir, 'processing/processing.log')
+
+processing_log = os.path.join(qgis_user_profile_dir, 'processing/processing.log')
 
 if not os.path.isfile(processing_log):
     print("Could not find processing log at ", processing_log)
+    print("Please specify your QGIS Active Profile Folder as the second argument to this script.")
+    print("(In QGIS go to 'Settings' > 'User Profiles' > 'Open Active Profile Folder' and copy the path.)")
     sys.exit(2)
 
 with open(processing_log) as f:
@@ -25,12 +44,12 @@ data_dir_replace_pattern = r"'\1{0}\2'.format(data_dir)"
 
 output_file = 'qgis_commands.py'
 with open(output_file, 'w') as output:
-    output.write("""
+    output.write(f"""
 from qgis import processing
 
-def run(data_dir):
+def run(data_dir='{data_dir}'):
 """)
-
+    added_line = False
     for line in lines:
         if '|' in line:
             # line example:
@@ -42,3 +61,10 @@ def run(data_dir):
                 cmd2 = data_dir_regex.sub(data_dir_replace_pattern, cmd)
                 output.write(f'    # {date}\n')
                 output.write(f'    {cmd2}\n')
+                added_line = True
+
+if not added_line:
+    print(f"No lines matched {data_dir}.")
+    sys.exit(3)
+
+print(f"Written commands to {output_file}")
