@@ -36,6 +36,13 @@ To rerun the processing from qGIS:
 2. Run the following commands, replacing `<script_dir>` with the folder where `qgis_commands.py` is (e.g. `/Users/ksvf48/Documents/dev/domain-specific-software-sustainability/scripts/qgis/processing`):
 
   ```
+  cd '<script_dir>'
   import qgis_commands
   qgis_commands.run()
+  ```
+
+  If you want to run the commands on a different system with a different data path, modify the last line to the following, replacing `<data_dir>` with the folder where your data files are:
+
+  ```
+  qgis_commands.run('<data_dir>')
   ```
