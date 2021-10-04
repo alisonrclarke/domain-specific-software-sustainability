@@ -32,13 +32,21 @@ def convert_history_to_python(data_dir, qgis_user_profile_dir=None):
     with open(processing_log) as f:
         lines = f.readlines()
 
-    data_dir_regex = re.compile(r"'([^']*){0}([^']*)'".format(data_dir))
-    data_dir_replace_pattern = r"'\1{0}\2'.format(data_dir)"
+    data_dir = data_dir.rstrip('/\\')
+
+    # Match single-quoted strings that contain data_dir, ensuring that escaped
+    # single quotes don't end the match
+    data_dir_regex = re.compile(r"'(?P<input_file_start>.*?){0}(?P<input_file_end>.*?)(?<!\\)'".format(data_dir))
+    data_dir_replace_pattern = r"'\g<input_file_start>{0}\g<input_file_end>'.format(data_dir)"
+
+    # Match outputs so we can create the output directory
+    output_file_regex = re.compile(r"'OUTPUT[^']*':'(.*?)(?<!\\)'")
 
     # FIXME: add this script directory (for now) or output_dir
     output_file = os.path.dirname(os.path.abspath(__file__)) + '/qgis_commands.py'
     with open(output_file, 'w') as output:
         output.write(f"""
+import os
 from qgis import processing
 
 
@@ -47,19 +55,29 @@ def run(data_dir='{data_dir}'):
         added_line = False
         for line in lines:
             if '|' in line:
-                print('--------------------------------')
                 # line example:
                 # ALGORITHM|~|2021-08-19 15:01:44|~|processing.run("native:hillshade", {'INPUT':'/Users/ksvf48/Documents/dev/pyqgis_in_a_day/srtm.tif','Z_FACTOR':1,'AZIMUTH':300,'V_ANGLE':40,'OUTPUT':'TEMPORARY_OUTPUT'})
                 parts = line.strip().split('|', maxsplit=4)
                 cmd = parts[4]
+
                 if data_dir_regex.search(cmd):
                     date = parts[2]
-                    cmd2 = data_dir_regex.sub(data_dir_replace_pattern, cmd)
-                    cmd2_quoted = re.sub(r'(?<!\\)"','\\"', cmd2)
-                    print(f"Adding command: {cmd2_quoted}")
                     output.write(f'    # {date}\n')
-                    output.write(f'    print("Running command: {cmd2_quoted}")\n')
-                    output.write(f'    {cmd2}\n')
+
+                    output_cmd = data_dir_regex.sub(data_dir_replace_pattern, cmd)
+                    output_cmd_quoted = re.sub(r'(?<!\\)"','\\"', output_cmd)
+                    print(f"Adding command: {output_cmd_quoted}")
+                    output.write(f'    print("Running command: {output_cmd_quoted}")\n')
+
+                    output_matches = output_file_regex.search(cmd)
+                    if output_matches:
+                        current_output_file = output_matches.group(1)
+                        if data_dir in current_output_file:
+                            current_output_dir = os.path.dirname(current_output_file)
+                            current_output_dir = current_output_dir.replace(data_dir, '{0}')
+                            output.write(f'    os.makedirs("{current_output_dir}".format(data_dir), exist_ok=True)\n')
+
+                    output.write(f'    {output_cmd}\n')
                     added_line = True
 
     if not added_line:
