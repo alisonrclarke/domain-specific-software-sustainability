@@ -1,9 +1,10 @@
+import datetime
 import os
 import re
 import sys
 
 
-def convert_history_to_python(data_dir, qgis_user_profile_dir=None):
+def convert_history_to_python(data_dir, output_dir=None, qgis_user_profile_dir=None):
     if qgis_user_profile_dir is None:
         if sys.platform.startswith('win32'):
             qgis_user_profile_dir = os.path.join(
@@ -43,7 +44,12 @@ def convert_history_to_python(data_dir, qgis_user_profile_dir=None):
     output_file_regex = re.compile(r"'OUTPUT[^']*':'(.*?)(?<!\\)'")
 
     # FIXME: add this script directory (for now) or output_dir
-    output_file = os.path.dirname(os.path.abspath(__file__)) + '/qgis_commands.py'
+    if not output_dir:
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'outputs')
+    timestamped_dirname = os.path.join(output_dir, datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S'))
+    os.makedirs(timestamped_dirname, exist_ok=True)
+    output_file = os.path.join(timestamped_dirname, 'qgis_commands.py')
+
     with open(output_file, 'w') as output:
         output.write(f"""
 import os
@@ -96,6 +102,9 @@ if __name__ == "__main__":
     qgis_user_profile_dir = None
 
     if len(sys.argv) > 2:
-        qgis_user_profile_dir = os.path.realpath(sys.argv[2])
+        output_dir = os.path.realpath(sys.argv[2])
 
-    convert_history_to_python(data_dir, qgis_user_profile_dir)
+    if len(sys.argv) > 3:
+        qgis_user_profile_dir = os.path.realpath(sys.argv[3])
+
+    convert_history_to_python(data_dir, output_dir, qgis_user_profile_dir)

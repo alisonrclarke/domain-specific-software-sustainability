@@ -33,9 +33,9 @@ To export QGIS processing history based on a given data directory (do **either**
     convert_history_to_python.convert_history_to_python('<data_dir>')
     ```
 
-`convert_history_to_python` exports a file `qgis_commands.py` in the current working directory which contains all the qGIS processing done on files within that folder.
+`convert_history_to_python` exports a file `qgis_commands.py` in a timestamped folder within an `outputs` directory of this directory (e.g. `outputs/2021-10-04_155206/qgis_commands.py`), which contains all the QGIS processing done on files within the given data directory.
 
-e.g.
+Example `qgis_commands.py` file:
 
 ```python
 from qgis import processing
@@ -53,6 +53,22 @@ def run(data_dir='/Users/ksvf48/Downloads/packages/Natural_Earth_quick_start/'):
 If necessary, this file could be edited by hand to remove duplicate entries (e.g. if an analysis was retried with different parameters).
 
 The exported file could then be stored in version control.
+
+You can choose to output the file to a different location `<output_script_dir>` as follows:
+
+1.  **From the command line**:
+
+    ```bash
+    python convert_history_to_python.py <data_dir> <output_script_dir>
+    ```
+
+2.  **From QGIS**:
+
+    ```python
+    convert_history_to_python.convert_history_to_python('<data_dir>', '<output_script_dir>')
+    ```
+
+(Note that the file will still be in a timestamped directory and called `qgis_processing.py`.)
 
 ## Running the exported script
 
