@@ -54,6 +54,7 @@ def convert_history_to_python(data_dir, output_dir=None, qgis_user_profile_dir=N
         output.write(f"""
 import os
 from qgis import processing
+from qgis.core import QgsVectorLayer, QgsProject
 
 
 def run(data_dir='{data_dir}'):
@@ -75,15 +76,23 @@ def run(data_dir='{data_dir}'):
                     print(f"Adding command: {output_cmd_quoted}")
                     output.write(f'    print("Running command: {output_cmd_quoted}")\n')
 
+                    # Create output directory
                     output_matches = output_file_regex.search(cmd)
                     if output_matches:
                         current_output_file = output_matches.group(1)
                         if data_dir in current_output_file:
+                            current_output_file = current_output_file.replace(data_dir, '{0}')
                             current_output_dir = os.path.dirname(current_output_file)
-                            current_output_dir = current_output_dir.replace(data_dir, '{0}')
                             output.write(f'    os.makedirs("{current_output_dir}".format(data_dir), exist_ok=True)\n')
 
                     output.write(f'    {output_cmd}\n')
+
+                    # If command outputs a shapefile, add it as a map layer
+                    if output_matches and current_output_file.endswith('.shp'):
+                        name = os.path.splitext(os.path.basename(current_output_file))[0]
+                        output.write(f'    layer = QgsVectorLayer("{current_output_file}".format(data_dir), "{name}")\n')
+                        output.write('    QgsProject.instance().addMapLayer(layer)\n')
+
                     added_line = True
 
     if not added_line:
