@@ -4,6 +4,8 @@
 and exports them as an executable file. This file can then be pushed to github or included in a data deposit, to enable
 others to reproduce your analysis.
 
+N.B. This script is still a work in progress - see the [GitHub issues](https://github.com/alisonrclarke/domain-specific-software-sustainability/issues) for a list of fixes to be made.
+
 ## Exporting history
 
 To export QGIS processing history based on a given data directory (do **either** 1 **or** 2):
