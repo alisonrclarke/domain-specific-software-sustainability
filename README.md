@@ -8,5 +8,5 @@ The scripts directory will hold any useful code snippets and tools I create alon
 
 ### QGIS Processing history
 
-`convert_history_to_python.py` converts QGIS processing history to an executable python script to allow others to
-reproduce your work. See its [README](scripts/qgis/processing_history/README.md) for further details.
+I create a script `convert_history_to_python.py` which converts QGIS processing history to an executable
+python script to allow others to reproduce your work. It has been moved to a new git repository at https://github.com/alisonrclarke/reproducible-qgis.
